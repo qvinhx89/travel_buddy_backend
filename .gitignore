@@ -1,0 +1,29 @@
+﻿# dependencies
+/node_modules/
+
+# environment
+.env
+.env.*
+!.env.example
+
+# logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# runtime data
+/uploads/
+*.db
+*.sqlite
+*.sqlite3
+
+# build/test output
+dist/
+build/
+coverage/
+
+# misc
+.DS_Store
