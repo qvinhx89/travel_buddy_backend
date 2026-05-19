@@ -19,8 +19,13 @@ export async function loginWithGoogle(input: GoogleLoginInput) {
   const ticket = await googleClient.verifyIdToken({
     idToken: input.idToken,
     audience: env.GOOGLE_CLIENT_ID,
-  }).catch(() => {
-    throw new HttpError(401, 'AUTH_INVALID_GOOGLE_TOKEN', 'Invalid Google ID token');
+  }).catch((error: unknown) => {
+    const details =
+      env.NODE_ENV === 'development' && error instanceof Error
+        ? { message: error.message }
+        : undefined;
+
+    throw new HttpError(401, 'AUTH_INVALID_GOOGLE_TOKEN', 'Invalid Google ID token', details);
   });
 
   const payload = ticket.getPayload();
