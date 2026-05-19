@@ -1,0 +1,129 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum TripStatus {
+  draft
+  active
+  paused
+  completed
+  interrupted
+  deleted
+}
+
+enum SyncStatus {
+  pending
+  syncing
+  synced
+  failed
+}
+
+enum TripFileType {
+  raw_track_jsonl
+  processed_geojson
+  thumbnail
+}
+
+enum SyncAction {
+  upload_trip
+  upload_track_file
+  update_trip
+  delete_trip
+}
+
+enum SyncLogStatus {
+  success
+  failed
+}
+
+model User {
+  id        String    @id @default(uuid()) @db.Char(36)
+  googleId  String    @unique @map("google_id") @db.VarChar(255)
+  email     String    @unique @db.VarChar(255)
+  name      String    @db.VarChar(255)
+  avatarUrl String?   @map("avatar_url") @db.Text
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  trips     Trip[]
+  syncLogs  SyncLog[]
+
+  @@map("users")
+}
+
+model Trip {
+  id                  String      @id @default(uuid()) @db.Char(36)
+  userId              String      @map("user_id") @db.Char(36)
+  localTripId          String      @map("local_trip_id") @db.VarChar(255)
+  name                String      @db.VarChar(255)
+  description         String?     @db.Text
+  status              TripStatus  @default(completed)
+  startedAt           DateTime    @map("started_at")
+  endedAt             DateTime?   @map("ended_at")
+  durationSeconds     Int         @default(0) @map("duration_seconds")
+  totalDistanceMeters Float       @default(0) @map("total_distance_meters")
+  avgSpeedMps         Float       @default(0) @map("avg_speed_mps")
+  maxSpeedMps         Float       @default(0) @map("max_speed_mps")
+  minElevationMeters  Float?      @map("min_elevation_meters")
+  maxElevationMeters  Float?      @map("max_elevation_meters")
+  startLat            Float?      @map("start_lat")
+  startLng            Float?      @map("start_lng")
+  endLat              Float?      @map("end_lat")
+  endLng              Float?      @map("end_lng")
+  pointCount          Int         @default(0) @map("point_count")
+  syncStatus          SyncStatus  @default(synced) @map("sync_status")
+  uploadedAt          DateTime?   @map("uploaded_at")
+  createdAt           DateTime    @default(now()) @map("created_at")
+  updatedAt           DateTime    @updatedAt @map("updated_at")
+  user                User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  files               TripFile[]
+  syncLogs            SyncLog[]
+
+  @@unique([userId, localTripId], map: "uq_user_local_trip")
+  @@index([userId], map: "idx_trips_user_id")
+  @@index([startedAt], map: "idx_trips_started_at")
+  @@index([syncStatus], map: "idx_trips_sync_status")
+  @@map("trips")
+}
+
+model TripFile {
+  id              String       @id @default(uuid()) @db.Char(36)
+  tripId          String       @map("trip_id") @db.Char(36)
+  fileType        TripFileType @map("file_type")
+  originalFilename String?     @map("original_filename") @db.VarChar(255)
+  storedFilename  String       @map("stored_filename") @db.VarChar(255)
+  filePath        String       @map("file_path") @db.Text
+  mimeType        String?      @map("mime_type") @db.VarChar(100)
+  sizeBytes       BigInt       @default(0) @map("size_bytes")
+  checksumSha256  String?      @map("checksum_sha256") @db.VarChar(255)
+  uploadedAt      DateTime     @default(now()) @map("uploaded_at")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  trip            Trip         @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@unique([tripId, fileType], map: "uq_trip_file_type")
+  @@index([tripId], map: "idx_trip_files_trip_id")
+  @@index([fileType], map: "idx_trip_files_file_type")
+  @@map("trip_files")
+}
+
+model SyncLog {
+  id           String        @id @default(uuid()) @db.Char(36)
+  userId       String        @map("user_id") @db.Char(36)
+  tripId       String?       @map("trip_id") @db.Char(36)
+  action       SyncAction
+  status       SyncLogStatus
+  errorMessage String?       @map("error_message") @db.Text
+  requestId    String?       @map("request_id") @db.VarChar(255)
+  createdAt    DateTime      @default(now()) @map("created_at")
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trip         Trip?         @relation(fields: [tripId], references: [id], onDelete: SetNull)
+
+  @@index([userId], map: "idx_sync_logs_user_id")
+  @@index([tripId], map: "idx_sync_logs_trip_id")
+  @@index([createdAt], map: "idx_sync_logs_created_at")
+  @@map("sync_logs")
+}
