@@ -3,8 +3,8 @@ import rateLimit from 'express-rate-limit';
 
 import { asyncHandler } from '../../utils/async-handler';
 import { validate } from '../../middlewares/validate.middleware';
-import { googleLoginController } from './auth.controller';
-import { googleLoginSchema } from './auth.validation';
+import { googleLoginController, logoutController, refreshController } from './auth.controller';
+import { googleLoginSchema, logoutSchema, refreshTokenSchema } from './auth.validation';
 
 export const authRouter = Router();
 
@@ -20,4 +20,16 @@ authRouter.post(
   googleAuthLimiter,
   validate({ body: googleLoginSchema }),
   asyncHandler(googleLoginController),
+);
+
+authRouter.post(
+  '/refresh',
+  validate({ body: refreshTokenSchema }),
+  asyncHandler(refreshController),
+);
+
+authRouter.post(
+  '/logout',
+  validate({ body: logoutSchema }),
+  asyncHandler(logoutController),
 );

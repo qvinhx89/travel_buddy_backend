@@ -7,12 +7,15 @@ const datetimeString = z.string().refine((value) => !Number.isNaN(Date.parse(val
 });
 
 export const tripStatusSchema = z.enum(['draft', 'active', 'paused', 'completed', 'interrupted', 'deleted']);
+export const travelModeSchema = z.enum(['walking', 'biking', 'trekking']);
 
 export const syncTripMetadataSchema = z.object({
   localTripId: z.string().min(1, 'localTripId is required'),
   name: z.string().min(1, 'Trip name is required').max(255),
   description: z.string().optional().nullable(),
   status: tripStatusSchema.default('completed'),
+  travelMode: travelModeSchema.default('walking'),
+  offlineRegionId: z.string().optional().nullable(),
   startedAt: datetimeString,
   endedAt: datetimeString.optional().nullable(),
   durationSeconds: z.coerce.number().int().min(0).default(0),

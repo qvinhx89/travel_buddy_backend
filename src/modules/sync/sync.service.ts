@@ -31,6 +31,8 @@ export async function syncTripWithTrackFile(
     name: metadata.name,
     description: metadata.description ?? null,
     status: metadata.status,
+    travelMode: metadata.travelMode,
+    offlineRegionId: metadata.offlineRegionId ?? null,
     startedAt: new Date(metadata.startedAt),
     endedAt: dateOrNull(metadata.endedAt),
     durationSeconds: metadata.durationSeconds,
